@@ -15,14 +15,14 @@ public class SlimeEnemy : Entity
     public float checkRadius;
     public Transform feet;
     public LayerMask ground;
-    
+    private InputSystem_Actions actions;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         startJumpTimer = jumpTimer;
         rb = GetComponent<Rigidbody2D>();
-        
+        actions = new InputSystem_Actions();
 
     }
 
@@ -77,7 +77,12 @@ public class SlimeEnemy : Entity
 
     }
 
-    
+    public override void Die()
+    {
+        EnemyManager.Instance.enemyCount--;
+        base.Die();
+    }
+
 
     private void OnDrawGizmosSelected()
     {
@@ -91,6 +96,7 @@ public class SlimeEnemy : Entity
     {
         if (collision.collider.CompareTag("Player"))
         {
+            actions.Disable();
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }

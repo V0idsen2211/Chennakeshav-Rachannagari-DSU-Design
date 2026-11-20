@@ -1,0 +1,149 @@
+using System;
+using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public float moveSpeed;
+    public float jumpForce;
+    public Transform feet;
+    public float checkRadius;
+    public LayerMask whatIsGround;
+    public float jumpBuffer, coyoteTime;
+    public GameObject jumpSound;
+    public GameObject jumpEffect;
+    
+    private InputSystem_Actions inputActions;
+    private float horizontalMoveInput;
+    private Rigidbody2D rb;
+    private Animator anim;
+    
+    private bool facingRight = true;
+
+    private bool isGrounded;
+
+    private float jumpBufferTimer, coyoteTimer;
+
+    public static PlayerMovement Instance { get; private set; }
+    private float regularGravity;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }else if (Instance != this)
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
+    {
+        inputActions = new InputSystem_Actions();
+        inputActions.Player.Enable();
+        rb = GetComponent<Rigidbody2D>();
+        anim =  GetComponent<Animator>();
+        regularGravity = rb.gravityScale;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        isGrounded = Physics2D.OverlapCircle(feet.position, checkRadius, whatIsGround);
+        horizontalMoveInput = inputActions.Player.Move.ReadValue<Vector2>().x;
+        rb.linearVelocityX = horizontalMoveInput * moveSpeed;
+
+        if (facingRight && horizontalMoveInput < 0)Turn();
+        if (!facingRight && horizontalMoveInput > 0)Turn();
+
+
+        if (isGrounded)
+        {
+            coyoteTimer = coyoteTime;
+        }
+        else
+        {
+            coyoteTimer -= Time.deltaTime;
+        }
+
+        if (inputActions.Player.Jump.triggered)
+        {
+            jumpBufferTimer = jumpBuffer;
+        }
+        else
+        {
+            jumpBufferTimer -= Time.deltaTime;
+        }
+
+        if (jumpBufferTimer > 0 && coyoteTimer > 0)
+        {
+            Jump();
+        }
+        HandleAnimations();
+        
+
+        if (rb.linearVelocityY < 0)
+        {
+            rb.gravityScale = regularGravity * 2;
+        }
+        else if(inputActions.Player.Jump.IsPressed() && rb.gravityScale > 0)
+        {
+            rb.gravityScale = regularGravity * .45f;
+        }
+        else
+        {
+            rb.gravityScale = regularGravity;
+        }
+    }
+
+    private void Turn()
+    {
+        facingRight = !facingRight;
+        Vector3 scale = transform.localScale;
+        scale.x *= -1;
+        transform.localScale = scale;
+    }
+
+    private void Jump()
+    {
+        coyoteTimer = 0;
+        jumpBufferTimer = 0;
+        Instantiate(jumpSound, transform.position, transform.rotation);
+        Instantiate(jumpEffect, feet.position, jumpEffect.transform.rotation);
+        rb.linearVelocityY = jumpForce;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(feet.position, checkRadius);
+    }
+
+    private void HandleAnimations()
+    {
+        if (isGrounded)
+        {
+            if (horizontalMoveInput != 0)
+            {
+                anim.CrossFade("run", 0);
+            }
+            else
+            {
+                anim.CrossFade("idle", 0);
+            }
+        }
+        else
+        {
+            if (rb.linearVelocityY > 0)
+            {
+                anim.CrossFade("rising", 0);
+            }
+            else if (rb.linearVelocityY < 0)
+            {
+                anim.CrossFade("falling", 0);
+            }
+        }
+        
+    }
+}

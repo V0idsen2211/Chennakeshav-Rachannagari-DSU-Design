@@ -80,6 +80,10 @@ public class SlimeEnemy : Entity
     public override void Die()
     {
         EnemyManager.Instance.enemyCount--;
+        if (EnemyManager.Instance.enemyCount <= 0)
+        {
+            GM.Instance.killedAllSlimes = true;
+        }
         base.Die();
     }
 

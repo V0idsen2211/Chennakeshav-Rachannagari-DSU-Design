@@ -34,7 +34,7 @@ public class DialogueNPC : MonoBehaviour
                 startedDialogue = true;
             }else if (Vector2.Distance(PlayerMovement.Instance.transform.position, transform.position) <= rangeToStartDialogue && !startedDialogue)
             {
-                Debug.Log("Starting Dialogue");
+                
                 DialogueManager.Instance.StartDialogue(startingDialogue);
                 startedDialogue = true;
             }
